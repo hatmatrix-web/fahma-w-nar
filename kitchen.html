@@ -1,1 +1,147 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>شاشة المطبخ - فحمة ونار</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <!-- مكتبة Firebase عبر CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #0f0f11;
+      --card-bg: #1a1a1e;
+      --primary: #ff5722;
+      --text-main: #ffffff;
+      --border-color: #2a2a30;
+      --accent-green: #2e7d32;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; }
+
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; }
+    .header h1 { color: var(--primary); font-size: 24px; }
+
+    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+
+    .order-card {
+      background: var(--card-bg); border: 2px solid var(--primary); border-radius: 12px;
+      padding: 15px; display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .order-header { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px; font-weight: bold; }
+    .car-badge { background: #ff9800; color: black; padding: 3px 8px; border-radius: 4px; font-size: 13px; font-weight: bold; display: inline-block; }
+
+    .order-item-line { background: #25252b; padding: 8px; border-radius: 6px; margin-bottom: 5px; }
+
+    .done-btn { background: var(--accent-green); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .audio-notice { background: #25252b; color: #ffb74d; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 15px; text-align: center; cursor: pointer; border: 1px solid var(--primary); }
+  </style>
+</head>
+<body>
+
+  <div class="audio-notice" onclick="enableAudio()">
+    🔔 اضغط هنا مرة واحدة لتفعيل نغمة التنبيه عند وصول الطلبات الجديدة
+  </div>
+
+  <div class="header">
+    <h1>👨‍🍳 طلبيات المطبخ النشطة (أونلاين)</h1>
+    <span id="order-count">الطلبات: 0</span>
+  </div>
+
+  <div class="orders-grid" id="orders-grid"></div>
+
+  <script>
+    // ربط قاعدة بيانات Firebase
+    const firebaseConfig = {
+      databaseURL: "https://fahma-w-nar-default-rtdb.firebaseio.com/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let lastOrderCount = 0;
+
+    function playBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(1, ctx.currentTime);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      } catch(e) {}
+    }
+
+    function enableAudio() {
+      playBeep();
+      alert('تم تفعيل صوت التنبيه بنجاح! 🔔');
+    }
+
+    database.ref('kitchen_orders').on('value', (snapshot) => {
+      const data = snapshot.val();
+      const container = document.getElementById('orders-grid');
+      
+      if (!data) {
+        container.innerHTML = '<p style="color:#a0a0ab;">لا توجد طلبات جديدة حالياً ☕</p>';
+        document.getElementById('order-count').innerText = 'الطلبات: 0';
+        lastOrderCount = 0;
+        return;
+      }
+
+      const ordersKeys = Object.keys(data);
+      const orders = Object.values(data);
+      document.getElementById('order-count').innerText = `الطلبات: ${orders.length}`;
+
+      if (orders.length > lastOrderCount && lastOrderCount !== 0) {
+        playBeep();
+      }
+      lastOrderCount = orders.length;
+
+      container.innerHTML = '';
+      ordersKeys.forEach((key, index) => {
+        let ord = data[key];
+        let lines = '';
+        if (ord.items) {
+          ord.items.forEach(it => {
+            let optsStr = it.options && it.options.length > 0 ? it.options.join(' ، ') : 'بدون إضافات';
+            lines += `
+              <div class="order-item-line">
+                <strong>${it.name} (x${it.qty})</strong>
+                <div style="font-size:12px; color:#aaa; margin-top:2px;">• ${optsStr}</div>
+              </div>
+            `;
+          });
+        }
+
+        container.innerHTML += `
+          <div class="order-card" id="card-${key}">
+            <div class="order-header">
+              <span>طلب #${ord.orderNum}</span>
+              <span>⏰ ${ord.time}</span>
+            </div>
+            <div><span class="car-badge">🚘 سيارة: ${ord.car}</span></div>
+            <div>${lines}</div>
+            <button class="done-btn" onclick="finishOrder('${key}')">تم التجهيز ✅</button>
+          </div>
+        `;
+      });
+    });
+
+    function finishOrder(key) {
+      database.ref('kitchen_orders/' + key).remove();
+    }
+  </script>
+</body>
+</html>
 
