@@ -1,1 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تقارير المبيعات - فحمة ونار</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <!-- مكتبة Firebase عبر CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #0f0f11;
+      --card-bg: #1a1a1e;
+      --primary: #ff5722;
+      --text-main: #ffffff;
+      --border-color: #2a2a30;
+      --text-muted: #a0a0ab;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; }
+
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .header h1 { color: var(--primary); font-size: 24px; }
+
+    .date-filter-box { background: var(--card-bg); border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .date-filter-box label { font-weight: bold; font-size: 15px; color: var(--text-main); }
+    .date-filter-box input[type="date"] { background: #25252b; border: 1px solid var(--border-color); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 15px; outline: none; }
+
+    .filter-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+    .stats-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; margin-bottom: 25px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+    .stat-item { background: #25252b; padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; text-align: center; }
+    .stat-item h3 { font-size: 16px; color: var(--text-muted); font-weight: normal; margin: 0; }
+    .stat-item p { font-size: 22px; font-weight: bold; margin: 0; }
+
+    .table-container { overflow-x: auto; }
+    .reports-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 8px; overflow: hidden; margin-top: 15px; }
+    .reports-table th, .reports-table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: right; white-space: nowrap; }
+    .reports-table th { background: #25252b; color: var(--primary); }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>📊 مراجعة المبيعات والتقارير (أونلاين)</h1>
+    <span style="color: var(--text-muted); font-size: 13px;">نظام فحمة ونار السحابي</span>
+  </div>
+
+  <div class="date-filter-box">
+    <label for="search-date">📅 اختر اليوم للمراجعة:</label>
+    <input type="date" id="search-date" onchange="loadReports()">
+    <button class="filter-btn" onclick="showAllDates()">عرض كل الأيام</button>
+  </div>
+
+  <div class="stats-card">
+    <div class="stat-item">
+      <h3 id="sales-title">مبيعات اليوم المحدد</h3>
+      <p id="total-rev" style="color: var(--primary);">0.000 ر.ع</p>
+    </div>
+    <div class="stat-item">
+      <h3>إجمالي عدد الطلبات</h3>
+      <p id="total-count">0</p>
+    </div>
+  </div>
+
+  <h2>سجل طلبات اليوم المحدد:</h2>
+  
+  <div class="table-container">
+    <table class="reports-table">
+      <thead>
+        <tr>
+          <th>رقم الطلب</th>
+          <th>التاريخ</th>
+          <th>الطلبات</th>
+          <th>المبلغ الإجمالي</th>
+        </tr>
+      </thead>
+      <tbody id="reports-tbody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // ربط قاعدة بيانات Firebase
+    const firebaseConfig = {
+      databaseURL: "https://fahma-w-nar-default-rtdb.firebaseio.com/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // فحص الرابط السري للتصفير (?reset=1)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('reset')) {
+      database.ref('sales_reports').remove();
+      database.ref('kitchen_orders').remove();
+      database.ref('counter').remove();
+      alert('تم تصفير ومسح جميع السجلات سحابياً بنجاح عبر الرابط السري! 🔒');
+      window.location.href = window.location.pathname;
+    }
+
+    document.getElementById('search-date').valueAsDate = new Date();
+
+    function loadReports() {
+      const selectedDate = document.getElementById('search-date').value;
+      
+      database.ref('sales_reports').once('value', (snapshot) => {
+        const data = snapshot.val();
+        const tbody = document.getElementById('reports-tbody');
+        tbody.innerHTML = '';
+
+        let totalRev = 0;
+        let count = 0;
+
+        if (data) {
+          Object.values(data).forEach(ord => {
+            let ordDateISO = new Date(ord.id).toISOString().split('T')[0];
+
+            if (!selectedDate || ordDateISO === selectedDate) {
+              totalRev += ord.total;
+              count++;
+              let itemsSummary = ord.items ? ord.items.map(i => `${i.name} (x${i.qty})`).join(' ، ') : '';
+
+              tbody.innerHTML += `
+                <tr>
+                  <td>#${ord.orderNum}</td>
+                  <td>${ord.date}</td>
+                  <td>${itemsSummary}</td>
+                  <td>${ord.total.toFixed(3)} ر.ع</td>
+                </tr>
+              `;
+            }
+          });
+        }
+
+        document.getElementById('total-rev').innerText = totalRev.toFixed(3) + ' ر.ع';
+        document.getElementById('total-count').innerText = count;
+
+        if (count === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">لا توجد مبيعات مسجلة في هذا اليوم</td></tr>';
+        }
+      });
+    }
+
+    function showAllDates() {
+      document.getElementById('search-date').value = '';
+      loadReports();
+    }
+
+    database.ref('sales_reports').on('value', () => {
+      loadReports();
+    });
+
+    loadReports();
+  </script>
+</body>
+</html>
 
