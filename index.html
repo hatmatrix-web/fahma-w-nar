@@ -25,7 +25,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
     body { background-color: var(--bg-color); color: var(--text-main); padding: 15px; }
 
-    /* تخطيط عمودي (تحت بعض) */
     .app-container { display: flex; flex-direction: column; gap: 20px; max-width: 800px; margin: 0 auto; }
     
     .menu-section { width: 100%; }
@@ -56,7 +55,6 @@
     .total-price { font-size: 20px; font-weight: bold; color: var(--primary); text-align: center; }
     .checkout-btn { background: var(--primary); border: none; color: white; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; }
 
-    /* تصميم نافذة الإضافات (Modal) */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; }
     .modal-title { font-size: 18px; color: var(--primary); margin-bottom: 15px; }
@@ -70,7 +68,6 @@
 <body>
 
   <div class="app-container">
-    <!-- قسم المنيو -->
     <div class="menu-section">
       <div class="header">
         <h1>🔥 فحمة ونار - الكاشير</h1>
@@ -88,7 +85,6 @@
       <div class="grid-container" id="menu-grid"></div>
     </div>
 
-    <!-- قسم تفاصيل الطلب أصبح هنا في الأسفل -->
     <div class="cart-section">
       <div>
         <h2>تفاصيل الطلب</h2>
@@ -108,7 +104,6 @@
     </div>
   </div>
 
-  <!-- نافذة التعديلات والإضافات الخاصة بالبرجر والفرايز -->
   <div class="modal-overlay" id="addon-modal">
     <div class="modal-content">
       <h3 class="modal-title" id="modal-item-name">إضافات الوجبة</h3>
@@ -148,39 +143,40 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // تم تحديث الامتداد ليناسب الأسماء الحالية المرفوعة (.png.jpeg)
     const menuItems = [
-      { id: 1, name: "برجر لحم كلاسيك", price: 1.000, category: "burgers", image: "beef_burger.png", hasAddons: true },
-      { id: 2, name: "برجر ستيك صدر دجاج", price: 1.000, category: "burgers", image: "chicken_steak.png", hasAddons: true },
-      { id: 3, name: "فاير بريوش لحم", price: 1.200, category: "burgers", image: "fire_brioche.png", hasAddons: true },
-      { id: 4, name: "فاير بريوش دبل لحم", price: 1.400, category: "burgers", image: "double_fire_brioche.png", hasAddons: true },
-      { id: 5, name: "فاير بريوش دجاج", price: 1.200, category: "burgers", image: "chicken_steak.png", hasAddons: true },
-      { id: 6, name: "صاروخ مشكاك لحم", price: 1.000, category: "burgers", image: "beef_rocket.png", hasAddons: true },
-      { id: 7, name: "صاروخ مشكاك دجاج", price: 1.000, category: "burgers", image: "chicken_rocket.png", hasAddons: true },
+      { id: 1, name: "برجر لحم كلاسيك", price: 1.000, category: "burgers", image: "beef_burger.png.jpeg", hasAddons: true },
+      { id: 2, name: "برجر ستيك صدر دجاج", price: 1.000, category: "burgers", image: "chicken_steak.png.jpeg", hasAddons: true },
+      { id: 3, name: "فاير بريوش لحم", price: 1.200, category: "burgers", image: "fire_brioche.png.jpeg", hasAddons: true },
+      { id: 4, name: "فاير بريوش دبل لحم", price: 1.400, category: "burgers", image: "double_fire_brioche.png.jpeg", hasAddons: true },
+      { id: 5, name: "فاير بريوش دجاج", price: 1.200, category: "burgers", image: "chicken_steak.png.jpeg", hasAddons: true },
+      { id: 6, name: "صاروخ مشكاك لحم", price: 1.000, category: "burgers", image: "beef_rocket.png.jpeg", hasAddons: true },
+      { id: 7, name: "صاروخ مشكاك دجاج", price: 1.000, category: "burgers", image: "chicken_rocket.png.jpeg", hasAddons: true },
 
-      { id: 8, name: "مشكاك لحم استرالي", price: 0.200, category: "skewers", image: "beef_aust_skewer.png", hasAddons: false },
-      { id: 9, name: "مشكاك لحم بوش", price: 0.200, category: "skewers", image: "beef_cam_skewer.png", hasAddons: false },
-      { id: 10, name: "مشكاك دجاج", price: 0.200, category: "skewers", image: "chicken_skewer.png", hasAddons: false },
-      { id: 11, name: "مشكاك بقر", price: 0.100, category: "skewers", image: "beef_cow_skewer.png", hasAddons: false },
-      { id: 12, name: "مشكاك جمل", price: 0.200, category: "skewers", image: "beef_cam_skewer.png", hasAddons: false },
-      { id: 13, name: "مشكاك حبار", price: 0.200, category: "skewers", image: "squid_skewer.png", hasAddons: false },
+      { id: 8, name: "مشكاك لحم استرالي", price: 0.200, category: "skewers", image: "beef_aust_skewer.png.jpeg", hasAddons: false },
+      { id: 9, name: "مشكاك لحم بوش", price: 0.200, category: "skewers", image: "beef_cam_skewer.png.jpeg", hasAddons: false },
+      { id: 10, name: "مشكاك دجاج", price: 0.200, category: "skewers", image: "chicken_skewer.png.jpeg", hasAddons: false },
+      { id: 11, name: "مشكاك بقر", price: 0.100, category: "skewers", image: "beef_cow_skewer.png.jpeg", hasAddons: false },
+      { id: 12, name: "مشكاك جمل", price: 0.200, category: "skewers", image: "beef_cam_skewer.png.jpeg", hasAddons: false },
+      { id: 13, name: "مشكاك حبار", price: 0.200, category: "skewers", image: "squid_skewer.png.jpeg", hasAddons: false },
 
-      { id: 14, name: "فرايز عادي", price: 0.500, category: "sides", image: "plain_fries.png", hasAddons: true },
-      { id: 15, name: "فرايز سبايسي", price: 0.600, category: "sides", image: "spicy_fries.png", hasAddons: true },
-      { id: 16, name: "فرايز لحم - صغير", price: 1.000, category: "sides", image: "beef_fries.png", hasAddons: true },
-      { id: 17, name: "فرايز دجاج - صغير", price: 1.000, category: "sides", image: "chicken_fries.png", hasAddons: true },
-      { id: 18, name: "فرايز لحم - كبير", price: 1.200, category: "sides", image: "beef_fries.png", hasAddons: true },
-      { id: 19, name: "فرايز دجاج - كبير", price: 1.200, category: "sides", image: "chicken_fries.png", hasAddons: true },
-      { id: 20, name: "شوربة بحرية", price: 0.500, category: "sides", image: "seafood_soup.png", hasAddons: false },
+      { id: 14, name: "فرايز عادي", price: 0.500, category: "sides", image: "plain_fries.png.jpeg", hasAddons: true },
+      { id: 15, name: "فرايز سبايسي", price: 0.600, category: "sides", image: "spicy_fries.png.jpeg", hasAddons: true },
+      { id: 16, name: "فرايز لحم - صغير", price: 1.000, category: "sides", image: "beef_fries.png.jpeg", hasAddons: true },
+      { id: 17, name: "فرايز دجاج - صغير", price: 1.000, category: "sides", image: "chicken_fries.png.jpeg", hasAddons: true },
+      { id: 18, name: "فرايز لحم - كبير", price: 1.200, category: "sides", image: "beef_fries.png.jpeg", hasAddons: true },
+      { id: 19, name: "فرايز دجاج - كبير", price: 1.200, category: "sides", image: "chicken_fries.png.jpeg", hasAddons: true },
+      { id: 20, name: "شوربة بحرية", price: 0.500, category: "sides", image: "seafood_soup.png.jpeg", hasAddons: false },
 
-      { id: 21, name: "كولا", price: 0.300, category: "drinks", image: "soft_drinks.png", hasAddons: false },
-      { id: 22, name: "كينزا", price: 0.200, category: "drinks", image: "soft_drinks.png", hasAddons: false },
-      { id: 23, name: "بيبسي", price: 0.300, category: "drinks", image: "soft_drinks.png", hasAddons: false },
-      { id: 24, name: "ديو", price: 0.300, category: "drinks", image: "soft_drinks.png", hasAddons: false },
-      { id: 25, name: "موهيتو", price: 0.600, category: "drinks", image: "mojito.png", hasAddons: false },
-      { id: 26, name: "كرك", price: 0.100, category: "drinks", image: "hot_drinks.png", hasAddons: false },
-      { id: 27, name: "شاي أحمر", price: 0.100, category: "drinks", image: "hot_drinks.png", hasAddons: false },
+      { id: 21, name: "كولا", price: 0.300, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
+      { id: 22, name: "كينزا", price: 0.200, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
+      { id: 23, name: "بيبسي", price: 0.300, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
+      { id: 24, name: "ديو", price: 0.300, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
+      { id: 25, name: "موهيتو", price: 0.600, category: "drinks", image: "mojito.png.jpeg", hasAddons: false },
+      { id: 26, name: "كرك", price: 0.100, category: "drinks", image: "hot_drinks.png.jpeg", hasAddons: false },
+      { id: 27, name: "شاي أحمر", price: 0.100, category: "drinks", image: "hot_drinks.png.jpeg", hasAddons: false },
 
-      { id: 28, name: "فشار فحمة ونار", price: 0.500, category: "snacks", image: "popcorn.png", hasAddons: false }
+      { id: 28, name: "فشار فحمة ونار", price: 0.500, category: "snacks", image: "popcorn.png.jpeg", hasAddons: false }
     ];
 
     let cart = [];
