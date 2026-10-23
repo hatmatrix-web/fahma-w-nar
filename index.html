@@ -143,7 +143,6 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // تم تحديث الامتداد ليناسب الأسماء الحالية المرفوعة (.png.jpeg)
     const menuItems = [
       { id: 1, name: "برجر لحم كلاسيك", price: 1.000, category: "burgers", image: "beef_burger.png.jpeg", hasAddons: true },
       { id: 2, name: "برجر ستيك صدر دجاج", price: 1.000, category: "burgers", image: "chicken_steak.png.jpeg", hasAddons: true },
@@ -191,12 +190,22 @@
       filtered.forEach(item => {
         grid.innerHTML += `
           <div class="item-card" onclick="handleItemClick(${item.id})">
-            <img src="${item.image}" alt="${item.name}" onerror="this.style.display='none'">
+            <img src="${item.image}" alt="${item.name}" onerror="handleImageError(this, '${item.image}')">
             <h3>${item.name}</h3>
             <p>${item.price.toFixed(3)} ر.ع</p>
           </div>
         `;
       });
+    }
+
+    // دالة تلقائية للبحث عن الصور داخل المجلد الفرعي إذا تعذر التحميل المباشر
+    function handleImageError(imgElement, originalSrc) {
+      if (!imgElement.getAttribute('data-retried')) {
+        imgElement.setAttribute('data-retried', 'true');
+        imgElement.src = 'fahma_w_nar/' + originalSrc;
+      } else {
+        imgElement.style.display = 'none';
+      }
     }
 
     function filterCategory(cat) {
