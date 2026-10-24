@@ -155,7 +155,7 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // قائمة الإضافات المخصصة للأقسام المحصورة فقط
+    // إضافات الوجبات للأقسام المختلفة
     const categoryAddons = {
       burgers: [
         { name: "🌶️ هالبينو", price: 0.100 },
@@ -170,8 +170,8 @@
       ]
     };
 
+    // قائمة الأصناف الكاملة
     const menuItems = [
-      // البرجر والوجبات (إلغاء الإضافات عن أصناف الصاروخ)
       { id: 1, name: "برجر لحم كلاسيك", price: 1.000, category: "burgers", image: "beef_burger.png.jpeg", hasAddons: true },
       { id: 2, name: "برجر ستيك صدر دجاج", price: 1.000, category: "burgers", image: "chicken_steak.png.jpeg", hasAddons: true },
       { id: 3, name: "فاير بريوش لحم", price: 1.200, category: "burgers", image: "fire_brioche.png.jpeg", hasAddons: true },
@@ -180,7 +180,6 @@
       { id: 6, name: "صاروخ مشكاك لحم", price: 1.000, category: "burgers", image: "beef_rocket.png.jpeg", hasAddons: false },
       { id: 7, name: "صاروخ مشكاك دجاج", price: 1.000, category: "burgers", image: "chicken_rocket.png.jpeg", hasAddons: false },
 
-      // المشاكيك (إضافات صبار)
       { id: 8, name: "مشكاك لحم استرالي", price: 0.200, category: "skewers", image: "beef_aust_skewer.png.jpeg", hasAddons: true },
       { id: 9, name: "مشكاك لحم بوش", price: 0.200, category: "skewers", image: "beef_cam_skewer.png.jpeg", hasAddons: true },
       { id: 10, name: "مشكاك دجاج", price: 0.200, category: "skewers", image: "chicken_skewer.png.jpeg", hasAddons: true },
@@ -188,7 +187,6 @@
       { id: 12, name: "مشكاك جمل", price: 0.200, category: "skewers", image: "beef_cam_skewer.png.jpeg", hasAddons: true },
       { id: 13, name: "مشكاك حبار", price: 0.200, category: "skewers", image: "squid_skewer.png.jpeg", hasAddons: true },
 
-      // الفرايز (إلغاء الإضافات عن الفرايز العادي والسبايسي)
       { id: 14, name: "فرايز عادي", price: 0.500, category: "sides", image: "plain_fries.png.jpeg", hasAddons: false },
       { id: 15, name: "فرايز سبايسي", price: 0.600, category: "sides", image: "spicy_fries.png.jpeg", hasAddons: false },
       { id: 16, name: "فرايز لحم - صغير", price: 1.000, category: "sides", image: "beef_fries.png.jpeg", hasAddons: true },
@@ -197,7 +195,6 @@
       { id: 19, name: "فرايز دجاج - كبير", price: 1.200, category: "sides", image: "chicken_fries.png.jpeg", hasAddons: true },
       { id: 20, name: "شوربة بحرية", price: 0.500, category: "sides", image: "seafood_soup.png.jpeg", hasAddons: false },
 
-      // المشروبات
       { id: 21, name: "كولا", price: 0.300, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
       { id: 22, name: "كينزا", price: 0.200, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
       { id: 23, name: "بيبسي", price: 0.300, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
@@ -206,7 +203,6 @@
       { id: 26, name: "كرك", price: 0.100, category: "drinks", image: "hot_drinks.png.jpeg", hasAddons: false },
       { id: 27, name: "شاي أحمر", price: 0.100, category: "drinks", image: "hot_drinks.png.jpeg", hasAddons: false },
 
-      // المقرمشات
       { id: 28, name: "فشار فحمة ونار", price: 0.500, category: "snacks", image: "popcorn.png.jpeg", hasAddons: false }
     ];
 
@@ -365,6 +361,10 @@
           const orderNum = snapshot.val();
           const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
           
+          // تاريخ منظم بصيغة YYYY-MM-DD لربطه بصفحة التقارير بدقة
+          const now = new Date();
+          const formattedDateOnly = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+
           const kitchenOrderData = {
             orderNum: orderNum,
             carNumber: carNumber || "بدون سيارة",
@@ -380,7 +380,8 @@
             items: cart,
             total: total,
             timestamp: Date.now(),
-            date: new Date().toLocaleString('ar-EG')
+            date: new Date().toLocaleString('ar-EG'),
+            dateOnly: formattedDateOnly
           };
 
           database.ref('kitchen_orders').push(kitchenOrderData);
