@@ -20,6 +20,7 @@
       --text-main: #ffffff;
       --border-color: #2a2a30;
       --text-muted: #a0a0ab;
+      --danger: #d32f2f;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
     body { background-color: var(--bg-color); color: var(--text-main); padding: 15px; }
@@ -34,8 +35,10 @@
     
     .date-input { width: 100%; padding: 10px; background: #25252b; border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-size: 15px; text-align: center; font-weight: bold; margin-bottom: 10px; }
     
-    .btn-show-all { background: var(--primary); border: none; color: white; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 14px; transition: 0.2s; }
-    .btn-show-all:hover { opacity: 0.9; }
+    .btn-group { display: flex; gap: 8px; }
+    .btn-show-all { background: var(--primary); border: none; color: white; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; font-size: 14px; transition: 0.2s; }
+    .btn-reset-all { background: var(--danger); border: none; color: white; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
+    .btn-show-all:hover, .btn-reset-all:hover { opacity: 0.9; }
 
     .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; text-align: center; }
     .stat-card h3 { font-size: 14px; color: var(--text-muted); margin-bottom: 5px; }
@@ -48,6 +51,28 @@
     th, td { border: 1px solid var(--border-color); padding: 10px; text-align: right; font-size: 13px; }
     th { background: #25252b; color: var(--primary); }
     td { background: #1a1a1e; }
+
+    /* قائمة الأصناف المنسدلة */
+    .btn-toggle-summary {
+      width: 100%;
+      background: #25252b;
+      border: 1px solid var(--border-color);
+      color: #ffffff;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.2s;
+    }
+    .btn-toggle-summary:hover { border-color: var(--primary); }
+    .summary-dropdown-content { display: none; margin-top: 10px; flex-direction: column; gap: 8px; }
+    .top-item-row { display: flex; justify-content: space-between; align-items: center; background: #25252b; padding: 10px 14px; border-radius: 8px; border-right: 4px solid var(--primary); }
+    .top-item-name { font-weight: bold; font-size: 14px; color: #ffffff; }
+    .top-item-badge { background: var(--primary); color: white; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -58,11 +83,14 @@
       <p>نظام فحمة ونار السحابي</p>
     </div>
     
-    <!-- قسم اختيار التاريخ -->
+    <!-- قسم اختيار التاريخ وزر التصفير -->
     <div class="filter-card">
       <h3>📅 اختر اليوم للمراجعة:</h3>
       <input type="date" id="selected-date" class="date-input" onchange="filterByDate()">
-      <button class="btn-show-all" onclick="showAllDays()">عرض كل الأيام</button>
+      <div class="btn-group">
+        <button class="btn-show-all" onclick="showAllDays()">عرض كل الأيام</button>
+        <button class="btn-reset-all" onclick="resetAllData()">🗑️ تصفير الكل</button>
+      </div>
     </div>
 
     <!-- الإحصائيات -->
@@ -76,7 +104,19 @@
       <div class="stat-value" id="total-orders-count" style="color: #ffffff;">0</div>
     </div>
 
-    <!-- جدول الطلبات -->
+    <!-- قائمة منسدلة لملخص الأطعمة والمبيعات -->
+    <div class="table-card">
+      <button class="btn-toggle-summary" onclick="toggleSummaryDropdown()">
+        <span>📋 عرض ملخص أعداد الأصناف المباعة</span>
+        <span id="dropdown-arrow">▼</span>
+      </button>
+
+      <div id="summary-dropdown-container" class="summary-dropdown-content">
+        <div style="text-align: center; color: var(--text-muted); padding: 10px;">لا توجد أصناف مباعة...</div>
+      </div>
+    </div>
+
+    <!-- جدول الطلبات تفصيلي -->
     <div class="table-card">
       <h3 id="table-title">سجل طلبات اليوم المحدد:</h3>
       <table>
@@ -84,7 +124,7 @@
           <tr>
             <th>رقم الطلب</th>
             <th>التاريخ والوقت</th>
-            <th>رقم السيارة</th>
+            <th>السيارة والأصناف المطلوبة</th>
             <th>الإجمالي</th>
           </tr>
         </thead>
@@ -126,9 +166,85 @@
       filterByDate();
     });
 
-    // فلترة الطلبات بدقة باستخدام حقل dateOnly أو مطابقة النصوص
+    // دالة التصفير المباشر الشامل
+    function resetAllData() {
+      const confirmReset = confirm('⚠️ تحذير: هل أنت متأكد من مسح جميع التقارير وتصفير العداد بالكامل؟ لا يمكن التراجع عن هذا الإجراء!');
+      if (!confirmReset) return;
+
+      // تصفير العداد ومسح التقارير وطلبات المطبخ دفعة واحدة
+      Promise.all([
+        database.ref('counter').set(0),
+        database.ref('sales_reports').remove(),
+        database.ref('kitchen_orders').remove()
+      ]).then(() => {
+        alert('تم تصفير كافة البيانات والعدادات بنجاح!');
+        window.location.reload();
+      }).catch(error => {
+        alert('حدث خطأ أثناء التصفير: ' + error.message);
+      });
+    }
+
+    // دالة فتح وإغلاق القائمة المنسدلة للملخص
+    function toggleSummaryDropdown() {
+      const container = document.getElementById('summary-dropdown-container');
+      const arrow = document.getElementById('dropdown-arrow');
+      
+      if (container.style.display === 'flex') {
+        container.style.display = 'none';
+        arrow.innerText = '▼';
+      } else {
+        container.style.display = 'flex';
+        arrow.innerText = '▲';
+      }
+    }
+
+    // دالة لتنسيق وعرض الأصناف داخل الطلب الواحد
+    function formatItemsList(items) {
+      if (!items || !Array.isArray(items)) return "لا توجد تفاصيل";
+      return items.map(i => `<span style="color:var(--primary); font-weight:bold;">${i.qty}×</span> ${i.name}`).join('<br>');
+    }
+
+    // دالة حساب وتجميع أعداد الطلبات المباعة القابلة للعرض في القائمة
+    function renderTopItemsSummary(filteredOrders) {
+      const container = document.getElementById('summary-dropdown-container');
+      const itemCounts = {};
+
+      filteredOrders.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach(item => {
+            if (itemCounts[item.name]) {
+              itemCounts[item.name] += item.qty;
+            } else {
+              itemCounts[item.name] = item.qty;
+            }
+          });
+        }
+      });
+
+      const sortedItems = Object.keys(itemCounts)
+        .map(name => ({ name: name, qty: itemCounts[name] }))
+        .sort((a, b) => b.qty - a.qty);
+
+      container.innerHTML = '';
+
+      if (sortedItems.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 10px;">لا توجد أصناف مباعة في هذا اليوم...</div>`;
+        return;
+      }
+
+      sortedItems.forEach(item => {
+        container.innerHTML += `
+          <div class="top-item-row">
+            <span class="top-item-name">${item.name}</span>
+            <span class="top-item-badge">${item.qty} طلب</span>
+          </div>
+        `;
+      });
+    }
+
+    // فلترة الطلبات حسب التاريخ
     function filterByDate() {
-      const selectedVal = document.getElementById('selected-date').value; // صيغة: YYYY-MM-DD
+      const selectedVal = document.getElementById('selected-date').value;
       const list = document.getElementById('sales-list');
       const totalView = document.getElementById('total-sales');
       const countView = document.getElementById('total-orders-count');
@@ -146,25 +262,28 @@
 
       const filtered = allReportsData.filter(item => {
         if (!item.date) return false;
-        
-        // إذا وُجد حقل dateOnly المنظم يتم مطبقته مباشرة، وإلا يتم الفحص عبر النص الشامل
         if (item.dateOnly) {
           return item.dateOnly === selectedVal;
         }
-        
-        // توافقية الطلبات القديمة إن وجدت
-        return String(item.date).includes(selectedVal) || String(item.date).includes(selectedVal.split('-').reverse().join('/'));
+        return String(item.date).includes(selectedVal);
       });
+
+      renderTopItemsSummary(filtered);
 
       filtered.forEach(item => {
         sum += item.total || 0;
         count++;
-        let carInfo = item.carNumber || "بدون سيارة";
+        let carInfo = item.carNumber ? `🚗 ${item.carNumber}` : "🚗 بدون سيارة";
+        let itemsDetails = formatItemsList(item.items);
+
         list.innerHTML += `
           <tr>
             <td>#${item.orderNum}</td>
             <td>${item.date}</td>
-            <td>🚗 ${carInfo}</td>
+            <td>
+              <div style="margin-bottom:4px; font-weight:bold; color:#a0a0ab;">${carInfo}</div>
+              <div style="font-size: 12px; line-height: 1.5;">${itemsDetails}</div>
+            </td>
             <td>${(item.total || 0).toFixed(3)} ر.ع</td>
           </tr>
         `;
@@ -191,15 +310,22 @@
       let sum = 0;
       let count = 0;
 
+      renderTopItemsSummary(allReportsData);
+
       allReportsData.forEach(item => {
         sum += item.total || 0;
         count++;
-        let carInfo = item.carNumber || "بدون سيارة";
+        let carInfo = item.carNumber ? `🚗 ${item.carNumber}` : "🚗 بدون سيارة";
+        let itemsDetails = formatItemsList(item.items);
+
         list.innerHTML += `
           <tr>
             <td>#${item.orderNum}</td>
             <td>${item.date}</td>
-            <td>🚗 ${carInfo}</td>
+            <td>
+              <div style="margin-bottom:4px; font-weight:bold; color:#a0a0ab;">${carInfo}</div>
+              <div style="font-size: 12px; line-height: 1.5;">${itemsDetails}</div>
+            </td>
             <td>${(item.total || 0).toFixed(3)} ر.ع</td>
           </tr>
         `;
