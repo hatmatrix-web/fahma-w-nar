@@ -34,7 +34,6 @@
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
     .header h1 { color: var(--primary); font-size: 22px; }
 
-    /* زر التنبيه العلوي للطلبات الجاهزة */
     .btn-ready-alert { background: #25252b; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 14px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 6px; transition: 0.3s; }
     .btn-ready-alert.has-ready { background: var(--success); color: white; border-color: var(--success); animation: pulse 1.5s infinite; }
 
@@ -66,7 +65,6 @@
     .total-price { font-size: 20px; font-weight: bold; color: var(--primary); text-align: center; }
     .checkout-btn { background: var(--primary); border: none; color: white; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; }
 
-    /* النوافذ المنبثقة */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
     .modal-title { font-size: 18px; color: var(--primary); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
@@ -76,7 +74,6 @@
     .btn-confirm { background: var(--primary); color: white; }
     .btn-cancel { background: #3a3a42; color: white; }
 
-    /* تصميم كروت الطلبات الجاهزة داخل النافذة */
     .ready-item-card { background: #25252b; border: 1px solid var(--success); border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
     .btn-deliver { background: var(--success); border: none; color: white; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
   </style>
@@ -87,7 +84,6 @@
     <div class="menu-section">
       <div class="header">
         <h1>🔥 فحمة ونار - الكاشير</h1>
-        <!-- الخيار الجديد أعلى الشاشة مكان طلب جديد -->
         <button id="ready-alert-btn" class="btn-ready-alert" onclick="openReadyOrdersModal()">
           <span>🔔 الطلبات الجاهزة</span>
           <span id="ready-count">(0)</span>
@@ -128,28 +124,7 @@
   <div class="modal-overlay" id="addon-modal">
     <div class="modal-content">
       <h3 class="modal-title" id="modal-item-name">إضافات الوجبة</h3>
-      <div id="addons-list">
-        <label class="addon-option">
-          <span>🌶️ هالبينو</span>
-          <input type="checkbox" value="هالبينو" data-price="0.100">
-        </label>
-        <label class="addon-option">
-          <span>🧅 بصل مكرمل</span>
-          <input type="checkbox" value="بصل مكرمل" data-price="0.100">
-        </label>
-        <label class="addon-option">
-          <span>🧀 جبن إضافي</span>
-          <input type="checkbox" value="جبن إضافي" data-price="0.200">
-        </label>
-        <label class="addon-option">
-          <span>🔥 صوص فاير إضافي</span>
-          <input type="checkbox" value="صوص فاير" data-price="0.100">
-        </label>
-        <label class="addon-option">
-          <span>🚫 بدون بصل</span>
-          <input type="checkbox" value="بدون بصل" data-price="0.000">
-        </label>
-      </div>
+      <div id="addons-list"></div>
       <div class="modal-actions">
         <button class="btn-modal btn-confirm" onclick="confirmAddToCart()">إضافة للطلب</button>
         <button class="btn-modal btn-cancel" onclick="closeAddonModal()">إلغاء</button>
@@ -180,30 +155,49 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // قائمة الإضافات المخصصة للأقسام المحصورة فقط
+    const categoryAddons = {
+      burgers: [
+        { name: "🌶️ هالبينو", price: 0.100 },
+        { name: "🔴 رمان", price: 0.100 },
+        { name: "🧅 بصل", price: 0.100 }
+      ],
+      sides: [
+        { name: "🌶️ هالبينو", price: 0.100 }
+      ],
+      skewers: [
+        { name: "🥫 صبار", price: 0.100 }
+      ]
+    };
+
     const menuItems = [
+      // البرجر والوجبات (إلغاء الإضافات عن أصناف الصاروخ)
       { id: 1, name: "برجر لحم كلاسيك", price: 1.000, category: "burgers", image: "beef_burger.png.jpeg", hasAddons: true },
       { id: 2, name: "برجر ستيك صدر دجاج", price: 1.000, category: "burgers", image: "chicken_steak.png.jpeg", hasAddons: true },
       { id: 3, name: "فاير بريوش لحم", price: 1.200, category: "burgers", image: "fire_brioche.png.jpeg", hasAddons: true },
       { id: 4, name: "فاير بريوش دبل لحم", price: 1.400, category: "burgers", image: "double_fire_brioche.png.jpeg", hasAddons: true },
       { id: 5, name: "فاير بريوش دجاج", price: 1.200, category: "burgers", image: "chicken_steak.png.jpeg", hasAddons: true },
-      { id: 6, name: "صاروخ مشكاك لحم", price: 1.000, category: "burgers", image: "beef_rocket.png.jpeg", hasAddons: true },
-      { id: 7, name: "صاروخ مشكاك دجاج", price: 1.000, category: "burgers", image: "chicken_rocket.png.jpeg", hasAddons: true },
+      { id: 6, name: "صاروخ مشكاك لحم", price: 1.000, category: "burgers", image: "beef_rocket.png.jpeg", hasAddons: false },
+      { id: 7, name: "صاروخ مشكاك دجاج", price: 1.000, category: "burgers", image: "chicken_rocket.png.jpeg", hasAddons: false },
 
-      { id: 8, name: "مشكاك لحم استرالي", price: 0.200, category: "skewers", image: "beef_aust_skewer.png.jpeg", hasAddons: false },
-      { id: 9, name: "مشكاك لحم بوش", price: 0.200, category: "skewers", image: "beef_cam_skewer.png.jpeg", hasAddons: false },
-      { id: 10, name: "مشكاك دجاج", price: 0.200, category: "skewers", image: "chicken_skewer.png.jpeg", hasAddons: false },
-      { id: 11, name: "مشكاك بقر", price: 0.100, category: "skewers", image: "beef_cow_skewer.png.jpeg", hasAddons: false },
-      { id: 12, name: "مشكاك جمل", price: 0.200, category: "skewers", image: "beef_cam_skewer.png.jpeg", hasAddons: false },
-      { id: 13, name: "مشكاك حبار", price: 0.200, category: "skewers", image: "squid_skewer.png.jpeg", hasAddons: false },
+      // المشاكيك (إضافات صبار)
+      { id: 8, name: "مشكاك لحم استرالي", price: 0.200, category: "skewers", image: "beef_aust_skewer.png.jpeg", hasAddons: true },
+      { id: 9, name: "مشكاك لحم بوش", price: 0.200, category: "skewers", image: "beef_cam_skewer.png.jpeg", hasAddons: true },
+      { id: 10, name: "مشكاك دجاج", price: 0.200, category: "skewers", image: "chicken_skewer.png.jpeg", hasAddons: true },
+      { id: 11, name: "مشكاك بقر", price: 0.100, category: "skewers", image: "beef_cow_skewer.png.jpeg", hasAddons: true },
+      { id: 12, name: "مشكاك جمل", price: 0.200, category: "skewers", image: "beef_cam_skewer.png.jpeg", hasAddons: true },
+      { id: 13, name: "مشكاك حبار", price: 0.200, category: "skewers", image: "squid_skewer.png.jpeg", hasAddons: true },
 
-      { id: 14, name: "فرايز عادي", price: 0.500, category: "sides", image: "plain_fries.png.jpeg", hasAddons: true },
-      { id: 15, name: "فرايز سبايسي", price: 0.600, category: "sides", image: "spicy_fries.png.jpeg", hasAddons: true },
+      // الفرايز (إلغاء الإضافات عن الفرايز العادي والسبايسي)
+      { id: 14, name: "فرايز عادي", price: 0.500, category: "sides", image: "plain_fries.png.jpeg", hasAddons: false },
+      { id: 15, name: "فرايز سبايسي", price: 0.600, category: "sides", image: "spicy_fries.png.jpeg", hasAddons: false },
       { id: 16, name: "فرايز لحم - صغير", price: 1.000, category: "sides", image: "beef_fries.png.jpeg", hasAddons: true },
       { id: 17, name: "فرايز دجاج - صغير", price: 1.000, category: "sides", image: "chicken_fries.png.jpeg", hasAddons: true },
       { id: 18, name: "فرايز لحم - كبير", price: 1.200, category: "sides", image: "beef_fries.png.jpeg", hasAddons: true },
       { id: 19, name: "فرايز دجاج - كبير", price: 1.200, category: "sides", image: "chicken_fries.png.jpeg", hasAddons: true },
       { id: 20, name: "شوربة بحرية", price: 0.500, category: "sides", image: "seafood_soup.png.jpeg", hasAddons: false },
 
+      // المشروبات
       { id: 21, name: "كولا", price: 0.300, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
       { id: 22, name: "كينزا", price: 0.200, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
       { id: 23, name: "بيبسي", price: 0.300, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
@@ -212,6 +206,7 @@
       { id: 26, name: "كرك", price: 0.100, category: "drinks", image: "hot_drinks.png.jpeg", hasAddons: false },
       { id: 27, name: "شاي أحمر", price: 0.100, category: "drinks", image: "hot_drinks.png.jpeg", hasAddons: false },
 
+      // المقرمشات
       { id: 28, name: "فشار فحمة ونار", price: 0.500, category: "snacks", image: "popcorn.png.jpeg", hasAddons: false }
     ];
 
@@ -250,10 +245,24 @@
 
     function handleItemClick(itemId) {
       const item = menuItems.find(i => i.id === itemId);
-      if (item.hasAddons) {
+      const availableAddons = categoryAddons[item.category];
+
+      if (item.hasAddons && availableAddons && availableAddons.length > 0) {
         selectedItemForAddons = item;
-        document.getElementById('modal-item-name').innerText = `تعديل وإضافات: ${item.name}`;
-        document.querySelectorAll('#addons-list input').forEach(input => input.checked = false);
+        document.getElementById('modal-item-name').innerText = `إضافات: ${item.name}`;
+        
+        const addonsList = document.getElementById('addons-list');
+        addonsList.innerHTML = '';
+
+        availableAddons.forEach(addon => {
+          addonsList.innerHTML += `
+            <label class="addon-option">
+              <span>${addon.name}</span>
+              <input type="checkbox" value="${addon.name}" data-price="${addon.price}">
+            </label>
+          `;
+        });
+
         document.getElementById('addon-modal').style.display = 'flex';
       } else {
         addItemToCartDirectly(item, [], 0);
@@ -385,7 +394,6 @@
       });
     }
 
-    // فتح وإغلاق نافذة الطلبات الجاهزة
     function openReadyOrdersModal() {
       document.getElementById('ready-modal').style.display = 'flex';
     }
@@ -394,7 +402,6 @@
       document.getElementById('ready-modal').style.display = 'none';
     }
 
-    // استماع لحظي ومباشر للطلبات الجاهزة وتحديث التنبيه والزر العلوي
     database.ref('kitchen_orders').on('value', (snapshot) => {
       const readyList = document.getElementById('ready-orders-list');
       const alertBtn = document.getElementById('ready-alert-btn');
