@@ -54,6 +54,14 @@
     .item-card h3 { font-size: 13px; margin-bottom: 4px; }
     .item-card p { color: var(--primary); font-weight: bold; font-size: 13px; }
 
+    /* تأثير وميض وانكماش خاطف عند الضغط على الوجبة */
+    .item-card.card-click-effect {
+      transform: scale(0.94);
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 12px rgba(255, 87, 34, 0.6);
+      transition: transform 0.08s ease, border-color 0.08s ease, box-shadow 0.08s ease;
+    }
+
     .cart-items { max-height: 200px; overflow-y: auto; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
     .cart-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #25252b; padding: 8px 12px; border-radius: 8px; }
     .cart-controls { display: flex; gap: 8px; align-items: center; }
@@ -240,6 +248,20 @@
     }
 
     function handleItemClick(itemId) {
+      // 1. اهتزاز خفيف للأجهزة التي تدعم الهزاز عند الضغط
+      if (navigator.vibrate) {
+        navigator.vibrate(40);
+      }
+
+      // 2. تأثير الوميض والانكماش الخاطف على كارت الوجبة المضغوطة
+      const card = event.currentTarget;
+      if (card) {
+        card.classList.add('card-click-effect');
+        setTimeout(() => {
+          card.classList.remove('card-click-effect');
+        }, 120);
+      }
+
       const item = menuItems.find(i => i.id === itemId);
       const availableAddons = categoryAddons[item.category];
 
@@ -360,17 +382,14 @@
       const now = new Date();
       const formattedDateOnly = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-      // التحقق من تاريخ آخر طلب تم تنفيذه لتصفير العداد أوتوماتيكياً إذا بدأ يوم جديد
       database.ref('last_order_date').once('value').then(dateSnapshot => {
         const lastDate = dateSnapshot.val();
 
         if (lastDate !== formattedDateOnly) {
-          // إذا كان اليوم جديداً، قم بتصفير العداد إلى 0 وحفظ تاريخ اليوم الجديد
           database.ref('counter').set(0);
           database.ref('last_order_date').set(formattedDateOnly);
         }
 
-        // الآن نسحب العداد ونزيده 1
         database.ref('counter').transaction(current => (current || 0) + 1, (error, committed, snapshot) => {
           if (committed) {
             const orderNum = snapshot.val();
