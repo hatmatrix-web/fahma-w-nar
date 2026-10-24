@@ -4,12 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تقارير المبيعات - فحمة ونار</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
 
-  <!-- مكتبة Firebase عبر CDN -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -22,142 +21,197 @@
       --border-color: #2a2a30;
       --text-muted: #a0a0ab;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 15px; }
+    .container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+    
+    .header-title { text-align: center; margin-bottom: 5px; }
+    .header-title h1 { color: var(--primary); font-size: 22px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .header-title p { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
 
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-    .header h1 { color: var(--primary); font-size: 24px; }
+    .filter-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; text-align: center; }
+    .filter-card h3 { font-size: 15px; margin-bottom: 10px; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 6px; }
+    
+    .date-input { width: 100%; padding: 10px; background: #25252b; border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-size: 15px; text-align: center; font-weight: bold; margin-bottom: 10px; }
+    
+    .btn-show-all { background: var(--primary); border: none; color: white; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 14px; transition: 0.2s; }
+    .btn-show-all:hover { opacity: 0.9; }
 
-    .date-filter-box { background: var(--card-bg); border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-    .date-filter-box label { font-weight: bold; font-size: 15px; color: var(--text-main); }
-    .date-filter-box input[type="date"] { background: #25252b; border: 1px solid var(--border-color); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 15px; outline: none; }
+    .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; text-align: center; }
+    .stat-card h3 { font-size: 14px; color: var(--text-muted); margin-bottom: 5px; }
+    .stat-value { font-size: 22px; font-weight: bold; color: var(--primary); }
 
-    .filter-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-
-    .stats-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; margin-bottom: 25px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-    .stat-item { background: #25252b; padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; text-align: center; }
-    .stat-item h3 { font-size: 16px; color: var(--text-muted); font-weight: normal; margin: 0; }
-    .stat-item p { font-size: 22px; font-weight: bold; margin: 0; }
-
-    .table-container { overflow-x: auto; }
-    .reports-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 8px; overflow: hidden; margin-top: 15px; }
-    .reports-table th, .reports-table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: right; white-space: nowrap; }
-    .reports-table th { background: #25252b; color: var(--primary); }
+    .table-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; overflow-x: auto; }
+    .table-card h3 { font-size: 16px; margin-bottom: 12px; color: var(--text-main); }
+    
+    table { width: 100%; border-collapse: collapse; min-width: 450px; }
+    th, td { border: 1px solid var(--border-color); padding: 10px; text-align: right; font-size: 13px; }
+    th { background: #25252b; color: var(--primary); }
+    td { background: #1a1a1e; }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <h1>📊 مراجعة المبيعات والتقارير (أونلاين)</h1>
-    <span style="color: var(--text-muted); font-size: 13px;">نظام فحمة ونار السحابي</span>
-  </div>
-
-  <div class="date-filter-box">
-    <label for="search-date">📅 اختر اليوم للمراجعة:</label>
-    <input type="date" id="search-date" onchange="loadReports()">
-    <button class="filter-btn" onclick="showAllDates()">عرض كل الأيام</button>
-  </div>
-
-  <div class="stats-card">
-    <div class="stat-item">
-      <h3 id="sales-title">مبيعات اليوم المحدد</h3>
-      <p id="total-rev" style="color: var(--primary);">0.000 ر.ع</p>
+  <div class="container">
+    <div class="header-title">
+      <h1>📊 مراجعة المبيعات والتقارير (أونلاين)</h1>
+      <p>نظام فحمة ونار السحابي</p>
     </div>
-    <div class="stat-item">
+    
+    <!-- قسم اختيار التاريخ -->
+    <div class="filter-card">
+      <h3>📅 اختر اليوم للمراجعة:</h3>
+      <input type="date" id="selected-date" class="date-input" onchange="filterByDate()">
+      <button class="btn-show-all" onclick="showAllDays()">عرض كل الأيام</button>
+    </div>
+
+    <!-- الإحصائيات -->
+    <div class="stat-card">
+      <h3>مبيعات اليوم المحدد</h3>
+      <div class="stat-value" id="total-sales">0.000 ر.ع</div>
+    </div>
+
+    <div class="stat-card">
       <h3>إجمالي عدد الطلبات</h3>
-      <p id="total-count">0</p>
+      <div class="stat-value" id="total-orders-count" style="color: #ffffff;">0</div>
     </div>
-  </div>
 
-  <h2>سجل طلبات اليوم المحدد:</h2>
-  
-  <div class="table-container">
-    <table class="reports-table">
-      <thead>
-        <tr>
-          <th>رقم الطلب</th>
-          <th>التاريخ</th>
-          <th>الطلبات</th>
-          <th>المبلغ الإجمالي</th>
-        </tr>
-      </thead>
-      <tbody id="reports-tbody"></tbody>
-    </table>
+    <!-- جدول الطلبات -->
+    <div class="table-card">
+      <h3 id="table-title">سجل طلبات اليوم المحدد:</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>رقم الطلب</th>
+            <th>التاريخ والوقت</th>
+            <th>رقم السيارة</th>
+            <th>الإجمالي</th>
+          </tr>
+        </thead>
+        <tbody id="sales-list">
+          <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">جاري التحميل...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <script>
-    // ربط قاعدة بيانات Firebase
     const firebaseConfig = {
       databaseURL: "https://fahma-w-nar-default-rtdb.firebaseio.com/"
     };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // فحص الرابط السري للتصفير (?reset=1)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('reset')) {
-      database.ref('sales_reports').remove();
-      database.ref('kitchen_orders').remove();
-      database.ref('counter').remove();
-      alert('تم تصفير ومسح جميع السجلات سحابياً بنجاح عبر الرابط السري! 🔒');
-      window.location.href = window.location.pathname;
-    }
+    let allReportsData = [];
 
-    document.getElementById('search-date').valueAsDate = new Date();
+    // تعيين تاريخ اليوم كقيمة افتراضية
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    
+    document.getElementById('selected-date').value = todayStr;
 
-    function loadReports() {
-      const selectedDate = document.getElementById('search-date').value;
-      
-      database.ref('sales_reports').once('value', (snapshot) => {
-        const data = snapshot.val();
-        const tbody = document.getElementById('reports-tbody');
-        tbody.innerHTML = '';
+    // جلب البيانات من Firebase
+    database.ref('sales_reports').on('value', (snapshot) => {
+      const data = snapshot.val();
+      allReportsData = [];
 
-        let totalRev = 0;
-        let count = 0;
-
-        if (data) {
-          Object.values(data).forEach(ord => {
-            let ordDateISO = new Date(ord.id).toISOString().split('T')[0];
-
-            if (!selectedDate || ordDateISO === selectedDate) {
-              totalRev += ord.total;
-              count++;
-              let itemsSummary = ord.items ? ord.items.map(i => `${i.name} (x${i.qty})`).join(' ، ') : '';
-
-              tbody.innerHTML += `
-                <tr>
-                  <td>#${ord.orderNum}</td>
-                  <td>${ord.date}</td>
-                  <td>${itemsSummary}</td>
-                  <td>${ord.total.toFixed(3)} ر.ع</td>
-                </tr>
-              `;
-            }
-          });
-        }
-
-        document.getElementById('total-rev').innerText = totalRev.toFixed(3) + ' ر.ع';
-        document.getElementById('total-count').innerText = count;
-
-        if (count === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">لا توجد مبيعات مسجلة في هذا اليوم</td></tr>';
-        }
-      });
-    }
-
-    function showAllDates() {
-      document.getElementById('search-date').value = '';
-      loadReports();
-    }
-
-    database.ref('sales_reports').on('value', () => {
-      loadReports();
+      if (data) {
+        Object.keys(data).forEach(key => {
+          allReportsData.push(data[key]);
+        });
+      }
+      filterByDate();
     });
 
-    loadReports();
+    // فلترة الطلبات بدقة باستخدام حقل dateOnly أو مطابقة النصوص
+    function filterByDate() {
+      const selectedVal = document.getElementById('selected-date').value; // صيغة: YYYY-MM-DD
+      const list = document.getElementById('sales-list');
+      const totalView = document.getElementById('total-sales');
+      const countView = document.getElementById('total-orders-count');
+      const tableTitle = document.getElementById('table-title');
+
+      tableTitle.innerText = `سجل طلبات اليوم (${selectedVal}):`;
+      list.innerHTML = '';
+      let sum = 0;
+      let count = 0;
+
+      if (!selectedVal) {
+        showAllDays();
+        return;
+      }
+
+      const filtered = allReportsData.filter(item => {
+        if (!item.date) return false;
+        
+        // إذا وُجد حقل dateOnly المنظم يتم مطبقته مباشرة، وإلا يتم الفحص عبر النص الشامل
+        if (item.dateOnly) {
+          return item.dateOnly === selectedVal;
+        }
+        
+        // توافقية الطلبات القديمة إن وجدت
+        return String(item.date).includes(selectedVal) || String(item.date).includes(selectedVal.split('-').reverse().join('/'));
+      });
+
+      filtered.forEach(item => {
+        sum += item.total || 0;
+        count++;
+        let carInfo = item.carNumber || "بدون سيارة";
+        list.innerHTML += `
+          <tr>
+            <td>#${item.orderNum}</td>
+            <td>${item.date}</td>
+            <td>🚗 ${carInfo}</td>
+            <td>${(item.total || 0).toFixed(3)} ر.ع</td>
+          </tr>
+        `;
+      });
+
+      if (count === 0) {
+        list.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">لا توجد طلبات مسجلة في هذا اليوم...</td></tr>`;
+      }
+
+      totalView.innerText = sum.toFixed(3) + ' ر.ع';
+      countView.innerText = count;
+    }
+
+    // زر عرض كل الأيام
+    function showAllDays() {
+      document.getElementById('selected-date').value = '';
+      const list = document.getElementById('sales-list');
+      const totalView = document.getElementById('total-sales');
+      const countView = document.getElementById('total-orders-count');
+      const tableTitle = document.getElementById('table-title');
+
+      tableTitle.innerText = `سجل كافة الطلبات (جميع الأيام):`;
+      list.innerHTML = '';
+      let sum = 0;
+      let count = 0;
+
+      allReportsData.forEach(item => {
+        sum += item.total || 0;
+        count++;
+        let carInfo = item.carNumber || "بدون سيارة";
+        list.innerHTML += `
+          <tr>
+            <td>#${item.orderNum}</td>
+            <td>${item.date}</td>
+            <td>🚗 ${carInfo}</td>
+            <td>${(item.total || 0).toFixed(3)} ر.ع</td>
+          </tr>
+        `;
+      });
+
+      if (count === 0) {
+        list.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">لا توجد أي طلبات مسجلة نهائياً...</td></tr>`;
+      }
+
+      totalView.innerText = sum.toFixed(3) + ' ر.ع';
+      countView.innerText = count;
+    }
   </script>
 </body>
 </html>
-
