@@ -20,6 +20,7 @@
       --text-main: #ffffff;
       --border-color: #2a2a30;
       --text-muted: #a0a0ab;
+      --success: #4caf50;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
@@ -32,6 +33,16 @@
 
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
     .header h1 { color: var(--primary); font-size: 22px; }
+
+    /* زر التنبيه العلوي للطلبات الجاهزة */
+    .btn-ready-alert { background: #25252b; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 14px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 6px; transition: 0.3s; }
+    .btn-ready-alert.has-ready { background: var(--success); color: white; border-color: var(--success); animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
 
     .categories-bar { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
     .cat-btn { background: #25252b; border: 1px solid var(--border-color); color: #fff; padding: 8px 16px; border-radius: 20px; cursor: pointer; white-space: nowrap; font-weight: bold; }
@@ -55,14 +66,19 @@
     .total-price { font-size: 20px; font-weight: bold; color: var(--primary); text-align: center; }
     .checkout-btn { background: var(--primary); border: none; color: white; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; }
 
+    /* النوافذ المنبثقة */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; }
-    .modal-title { font-size: 18px; color: var(--primary); margin-bottom: 15px; }
+    .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+    .modal-title { font-size: 18px; color: var(--primary); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
     .addon-option { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #25252b; padding: 10px; border-radius: 6px; }
     .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
     .btn-modal { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .btn-confirm { background: var(--primary); color: white; }
     .btn-cancel { background: #3a3a42; color: white; }
+
+    /* تصميم كروت الطلبات الجاهزة داخل النافذة */
+    .ready-item-card { background: #25252b; border: 1px solid var(--success); border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .btn-deliver { background: var(--success); border: none; color: white; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -71,7 +87,11 @@
     <div class="menu-section">
       <div class="header">
         <h1>🔥 فحمة ونار - الكاشير</h1>
-        <span id="order-id-view" style="color: var(--text-muted);">طلب جديد</span>
+        <!-- الخيار الجديد أعلى الشاشة مكان طلب جديد -->
+        <button id="ready-alert-btn" class="btn-ready-alert" onclick="openReadyOrdersModal()">
+          <span>🔔 الطلبات الجاهزة</span>
+          <span id="ready-count">(0)</span>
+        </button>
       </div>
 
       <div class="categories-bar">
@@ -104,6 +124,7 @@
     </div>
   </div>
 
+  <!-- نافذة إضافات الوجبة -->
   <div class="modal-overlay" id="addon-modal">
     <div class="modal-content">
       <h3 class="modal-title" id="modal-item-name">إضافات الوجبة</h3>
@@ -132,6 +153,22 @@
       <div class="modal-actions">
         <button class="btn-modal btn-confirm" onclick="confirmAddToCart()">إضافة للطلب</button>
         <button class="btn-modal btn-cancel" onclick="closeAddonModal()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة عرض الطلبات الجاهزة للاستلام -->
+  <div class="modal-overlay" id="ready-modal">
+    <div class="modal-content">
+      <div class="modal-title">
+        <span style="color: var(--success);">🔔 الطلبات الجاهزة للاستلام</span>
+        <button onclick="closeReadyModal()" style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+      </div>
+      <div id="ready-orders-list">
+        <div style="color: var(--text-muted); text-align: center; padding: 20px;">لا توجد طلبات جاهزة حالياً...</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal btn-cancel" onclick="closeReadyModal()">إغلاق</button>
       </div>
     </div>
   </div>
@@ -198,13 +235,10 @@
       });
     }
 
-    // دالة تلقائية للبحث عن الصور داخل المجلد الفرعي إذا تعذر التحميل المباشر
     function handleImageError(imgElement, originalSrc) {
       if (!imgElement.getAttribute('data-retried')) {
         imgElement.setAttribute('data-retried', 'true');
         imgElement.src = 'fahma_w_nar/' + originalSrc;
-      } else {
-        imgElement.style.display = 'none';
       }
     }
 
@@ -249,14 +283,20 @@
     function addItemToCartDirectly(item, addons, extraPrice) {
       const itemTotalPrice = item.price + extraPrice;
       const addonsText = addons.length > 0 ? ` (${addons.join('، ')})` : '';
-      
-      cart.push({
-        id: Date.now(),
-        originalId: item.id,
-        name: item.name + addonsText,
-        price: itemTotalPrice,
-        qty: 1
-      });
+      const fullName = item.name + addonsText;
+
+      const existingItem = cart.find(c => c.name === fullName);
+      if (existingItem) {
+        existingItem.qty += 1;
+      } else {
+        cart.push({
+          id: Date.now(),
+          originalId: item.id,
+          name: fullName,
+          price: itemTotalPrice,
+          qty: 1
+        });
+      }
 
       updateCart();
     }
@@ -304,6 +344,11 @@
         return;
       }
 
+      const confirmSend = confirm('هل أنت متأكد من إرسال الطلب للمطبخ؟');
+      if (!confirmSend) {
+        return;
+      }
+
       const carNumber = document.getElementById('car-number').value.trim();
 
       database.ref('counter').transaction(current => (current || 0) + 1, (error, committed, snapshot) => {
@@ -338,6 +383,57 @@
           updateCart();
         }
       });
+    }
+
+    // فتح وإغلاق نافذة الطلبات الجاهزة
+    function openReadyOrdersModal() {
+      document.getElementById('ready-modal').style.display = 'flex';
+    }
+
+    function closeReadyModal() {
+      document.getElementById('ready-modal').style.display = 'none';
+    }
+
+    // استماع لحظي ومباشر للطلبات الجاهزة وتحديث التنبيه والزر العلوي
+    database.ref('kitchen_orders').on('value', (snapshot) => {
+      const readyList = document.getElementById('ready-orders-list');
+      const alertBtn = document.getElementById('ready-alert-btn');
+      const countSpan = document.getElementById('ready-count');
+      
+      readyList.innerHTML = '';
+      const orders = snapshot.val();
+      let readyCount = 0;
+
+      if (orders) {
+        Object.keys(orders).forEach(key => {
+          const order = orders[key];
+          if (order.status === "مكتمل") {
+            readyCount++;
+            readyList.innerHTML += `
+              <div class="ready-item-card">
+                <div>
+                  <div style="font-weight:bold; color:var(--success); font-size:16px;">طلب #${order.orderNum}</div>
+                  <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">🚗 ${order.carNumber || 'بدون سيارة'}</div>
+                </div>
+                <button class="btn-deliver" onclick="deliverOrder('${key}')">تم التسليم ✓</button>
+              </div>
+            `;
+          }
+        });
+      }
+
+      countSpan.innerText = `(${readyCount})`;
+
+      if (readyCount > 0) {
+        alertBtn.classList.add('has-ready');
+      } else {
+        alertBtn.classList.remove('has-ready');
+        readyList.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 20px;">لا توجد طلبات جاهزة حالياً...</div>`;
+      }
+    });
+
+    function deliverOrder(orderKey) {
+      database.ref('kitchen_orders/' + orderKey).remove();
     }
 
     renderMenu('burgers');
