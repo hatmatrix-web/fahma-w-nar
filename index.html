@@ -163,22 +163,22 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // إضافات الوجبات للأقسام المختلفة
+    // إضافات الوجبات مجانية بالكامل (السعر 0.000)
     const categoryAddons = {
       burgers: [
-        { name: "🌶️ هالبينو", price: 0.100 },
-        { name: "🔴 رمان", price: 0.100 },
-        { name: "🧅 بصل", price: 0.100 }
+        { name: "🌶️ هالبينو", price: 0.000 },
+        { name: "🔴 رمان", price: 0.000 },
+        { name: "🧅 بصل", price: 0.000 }
       ],
       sides: [
-        { name: "🌶️ هالبينو", price: 0.100 }
+        { name: "🌶️ هالبينو", price: 0.000 }
       ],
       skewers: [
-        { name: "🥫 صبار", price: 0.100 }
+        { name: "🥫 صبار", price: 0.000 }
       ]
     };
 
-    // قائمة الأصناف الكاملة
+    // قائمة الأصناف الكاملة (مضاف إليها الماء مع المشروبات)
     const menuItems = [
       { id: 1, name: "برجر لحم كلاسيك", price: 1.000, category: "burgers", image: "beef_burger.png.jpeg", hasAddons: true },
       { id: 2, name: "برجر ستيك صدر دجاج", price: 1.000, category: "burgers", image: "chicken_steak.png.jpeg", hasAddons: true },
@@ -208,10 +208,11 @@
       { id: 23, name: "بيبسي", price: 0.300, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
       { id: 24, name: "ديو", price: 0.300, category: "drinks", image: "soft_drinks.png.jpeg", hasAddons: false },
       { id: 25, name: "موهيتو", price: 0.600, category: "drinks", image: "mojito.png.jpeg", hasAddons: false },
-      { id: 26, name: "كرك", price: 0.100, category: "drinks", image: "hot_drinks.png.jpeg", hasAddons: false },
-      { id: 27, name: "شاي أحمر", price: 0.100, category: "drinks", image: "hot_drinks.png.jpeg", hasAddons: false },
+      { id: 26, name: "ماء", price: 0.100, category: "drinks", image: "water.png.jpeg", hasAddons: false },
+      { id: 27, name: "كرك", price: 0.100, category: "drinks", image: "hot_drinks.png.jpeg", hasAddons: false },
+      { id: 28, name: "شاي أحمر", price: 0.100, category: "drinks", image: "hot_drinks.png.jpeg", hasAddons: false },
 
-      { id: 28, name: "فشار فحمة ونار", price: 0.500, category: "snacks", image: "popcorn.png.jpeg", hasAddons: false }
+      { id: 29, name: "فشار فحمة ونار", price: 0.500, category: "snacks", image: "popcorn.png.jpeg", hasAddons: false }
     ];
 
     let cart = [];
@@ -248,12 +249,10 @@
     }
 
     function handleItemClick(itemId) {
-      // 1. اهتزاز خفيف للأجهزة التي تدعم الهزاز عند الضغط
       if (navigator.vibrate) {
         navigator.vibrate(40);
       }
 
-      // 2. تأثير الوميض والانكماش الخاطف على كارت الوجبة المضغوطة
       const card = event.currentTarget;
       if (card) {
         card.classList.add('card-click-effect');
@@ -365,7 +364,6 @@
       document.getElementById('total-price').innerText = total.toFixed(3) + ' ر.ع';
     }
 
-    // دالة إرسال الطلب مع إعادة تعيين العداد تلقائياً إلى 1 مع كل يوم جديد
     function submitOrder() {
       if (cart.length === 0) {
         alert('يرجى إضافة أصناف للطلب أولاً!');
