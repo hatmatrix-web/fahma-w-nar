@@ -48,7 +48,7 @@
 
   <div class="header">
     <h1>👨‍🍳 شاشة المطبخ - فحمة ونار</h1>
-    <span style="color: #4caf50; font-weight: bold; font-size: 14px;">🔊 التنبيه الصوتي مفعّل</span>
+    <span style="color: #4caf50; font-weight: bold; font-size: 14px;">🔊 التنبيه بأقصى مستوى صوت مفعّل</span>
   </div>
 
   <div class="orders-grid" id="kitchen-orders-container">
@@ -76,8 +76,8 @@
     window.addEventListener('click', initAudio);
     window.addEventListener('touchstart', initAudio);
 
-    // صوت تنبيه قوي وجذاب (يعمل مرة واحدة فقط عند الطلب الجديد)
-    function playAlarmSound() {
+    // نفس النغمة السابقة تماماً لكن بأعلى طاقة صوت مضخمة (Max Volume Boost)
+    function playLoudAlarmSound() {
       try {
         initAudio();
         
@@ -89,10 +89,12 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             
+            // العودة لنفس الموجة السابقة (Sawtooth)
             osc.type = 'sawtooth';
             osc.frequency.value = freq;
             
-            gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+            // رفع الصوت إلى الحد الأقصى للمتصفح
+            gain.gain.setValueAtTime(1.5, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
             
             osc.connect(gain);
@@ -103,10 +105,11 @@
           }, delay);
         }
 
-        tone(950, 0.15, 0);
-        tone(1400, 0.15, 150);
-        tone(950, 0.15, 300);
-        tone(1400, 0.25, 450);
+        // نفس الترتيب والنغمات السابقة بالظبط
+        tone(950, 0.18, 0);
+        tone(1400, 0.18, 150);
+        tone(950, 0.18, 300);
+        tone(1400, 0.30, 450);
       } catch (e) {
         console.log("Audio error", e);
       }
@@ -167,9 +170,9 @@
         container.innerHTML = `<div class="no-orders">لا توجد طلبات جديدة حالياً ☕</div>`;
       }
 
-      // تشغيل الصوت الجذاب لمرة واحدة فقط عند وصول طلب جديد
+      // تشغيل النغمة السابقة بأعلى مستوى صوت فور وصول طلب جديد
       if (hasNewArrival) {
-        playAlarmSound();
+        playLoudAlarmSound();
       }
 
       previousOrdersKeys = currentActiveKeys;
