@@ -343,6 +343,7 @@
       document.getElementById('total-price').innerText = total.toFixed(3) + ' ر.ع';
     }
 
+    // دالة إرسال الطلب مع إعادة تعيين العداد تلقائياً إلى 1 مع كل يوم جديد
     function submitOrder() {
       if (cart.length === 0) {
         alert('يرجى إضافة أصناف للطلب أولاً!');
@@ -356,42 +357,53 @@
 
       const carNumber = document.getElementById('car-number').value.trim();
 
-      database.ref('counter').transaction(current => (current || 0) + 1, (error, committed, snapshot) => {
-        if (committed) {
-          const orderNum = snapshot.val();
-          const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
-          
-          // تاريخ منظم بصيغة YYYY-MM-DD لربطه بصفحة التقارير بدقة
-          const now = new Date();
-          const formattedDateOnly = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+      const now = new Date();
+      const formattedDateOnly = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-          const kitchenOrderData = {
-            orderNum: orderNum,
-            carNumber: carNumber || "بدون سيارة",
-            items: cart,
-            total: total,
-            status: "جديد",
-            timestamp: Date.now(),
-            date: new Date().toLocaleString('ar-EG')
-          };
+      // التحقق من تاريخ آخر طلب تم تنفيذه لتصفير العداد أوتوماتيكياً إذا بدأ يوم جديد
+      database.ref('last_order_date').once('value').then(dateSnapshot => {
+        const lastDate = dateSnapshot.val();
 
-          const salesReportData = {
-            orderNum: orderNum,
-            items: cart,
-            total: total,
-            timestamp: Date.now(),
-            date: new Date().toLocaleString('ar-EG'),
-            dateOnly: formattedDateOnly
-          };
-
-          database.ref('kitchen_orders').push(kitchenOrderData);
-          database.ref('sales_reports').push(salesReportData);
-
-          alert(`تم إرسال الطلب رقم #${orderNum} للمطبخ بنجاح! 👨‍🍳`);
-          cart = [];
-          document.getElementById('car-number').value = '';
-          updateCart();
+        if (lastDate !== formattedDateOnly) {
+          // إذا كان اليوم جديداً، قم بتصفير العداد إلى 0 وحفظ تاريخ اليوم الجديد
+          database.ref('counter').set(0);
+          database.ref('last_order_date').set(formattedDateOnly);
         }
+
+        // الآن نسحب العداد ونزيده 1
+        database.ref('counter').transaction(current => (current || 0) + 1, (error, committed, snapshot) => {
+          if (committed) {
+            const orderNum = snapshot.val();
+            const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+
+            const kitchenOrderData = {
+              orderNum: orderNum,
+              carNumber: carNumber || "بدون سيارة",
+              items: cart,
+              total: total,
+              status: "جديد",
+              timestamp: Date.now(),
+              date: new Date().toLocaleString('ar-EG')
+            };
+
+            const salesReportData = {
+              orderNum: orderNum,
+              items: cart,
+              total: total,
+              timestamp: Date.now(),
+              date: new Date().toLocaleString('ar-EG'),
+              dateOnly: formattedDateOnly
+            };
+
+            database.ref('kitchen_orders').push(kitchenOrderData);
+            database.ref('sales_reports').push(salesReportData);
+
+            alert(`تم إرسال الطلب رقم #${orderNum} للمطبخ بنجاح! 👨‍🍳`);
+            cart = [];
+            document.getElementById('car-number').value = '';
+            updateCart();
+          }
+        });
       });
     }
 
