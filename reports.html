@@ -21,6 +21,8 @@
       --border-color: #2a2a30;
       --text-muted: #a0a0ab;
       --danger: #d32f2f;
+      --success: #4caf50;
+      --edit-btn: #2196f3;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
     body { background-color: var(--bg-color); color: var(--text-main); padding: 15px; }
@@ -47,10 +49,13 @@
     .table-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; overflow-x: auto; }
     .table-card h3 { font-size: 16px; margin-bottom: 12px; color: var(--text-main); }
     
-    table { width: 100%; border-collapse: collapse; min-width: 450px; }
+    table { width: 100%; border-collapse: collapse; min-width: 480px; }
     th, td { border: 1px solid var(--border-color); padding: 10px; text-align: right; font-size: 13px; }
     th { background: #25252b; color: var(--primary); }
     td { background: #1a1a1e; }
+
+    .btn-edit { background: var(--edit-btn); border: none; color: white; padding: 5px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; margin-top: 6px; transition: 0.2s; }
+    .btn-edit:hover { opacity: 0.9; }
 
     /* قائمة الأصناف المنسدلة */
     .btn-toggle-summary {
@@ -73,6 +78,23 @@
     .top-item-row { display: flex; justify-content: space-between; align-items: center; background: #25252b; padding: 10px 14px; border-radius: 8px; border-right: 4px solid var(--primary); }
     .top-item-name { font-weight: bold; font-size: 14px; color: #ffffff; }
     .top-item-badge { background: var(--primary); color: white; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; }
+
+    /* نافذة التعديل المنبثقة */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; width: 90%; max-width: 450px; max-height: 85vh; overflow-y: auto; }
+    .modal-title { font-size: 18px; color: var(--primary); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .edit-item-row { display: flex; justify-content: space-between; align-items: center; background: #25252b; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; }
+    .edit-controls { display: flex; gap: 6px; align-items: center; }
+    .btn-qty { background: var(--primary); border: none; color: white; width: 26px; height: 26px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
+    .btn-delete-item { background: var(--danger); border: none; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
+    
+    .add-new-item-section { background: #25252b; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 15px; display: flex; gap: 8px; align-items: center; }
+    .add-new-select { flex: 1; padding: 8px; background: #1a1a1e; border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 13px; font-family: 'Tajawal', sans-serif; }
+    .btn-add-item-to-order { background: var(--success); border: none; color: white; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap; }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
+    .btn-modal-save { background: var(--success); border: none; color: white; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; font-size: 14px; }
+    .btn-modal-cancel { background: #3a3a42; border: none; color: white; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -135,6 +157,37 @@
     </div>
   </div>
 
+  <!-- نافذة تعديل الطلب المنبثقة -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal-content">
+      <div class="modal-title">
+        <span id="edit-modal-title">تعديل الطلب</span>
+        <button onclick="closeEditModal()" style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+      </div>
+      
+      <!-- إضافة صنف جديد للطلب من المنيو -->
+      <div class="add-new-item-section">
+        <select id="menu-items-select" class="add-new-select">
+          <option value="">-- اختر صنفاً لإضافته للطلب --</option>
+        </select>
+        <button class="btn-add-item-to-order" onclick="addNewItemToCurrentOrder()">+ إضافة</button>
+      </div>
+
+      <div id="edit-items-container" style="max-height: 220px; overflow-y: auto; margin-bottom: 15px;">
+        <!-- عناصر الطلب للتعديل -->
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 15px; font-size: 16px;">
+        <span>الإجمالي الجديد:</span>
+        <span id="edit-modal-total" style="color: var(--primary);">0.000 ر.ع</span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-save" onclick="saveEditedOrder()">حفظ التعديلات ✓</button>
+        <button class="btn-modal-cancel" onclick="closeEditModal()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const firebaseConfig = {
       databaseURL: "https://fahma-w-nar-default-rtdb.firebaseio.com/"
@@ -142,7 +195,42 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // قائمة الأصناف الكاملة الموجودة في الكاشير
+    const fullMenuItems = [
+      { name: "برجر لحم كلاسيك", price: 1.000 },
+      { name: "برجر ستيك صدر دجاج", price: 1.000 },
+      { name: "فاير بريوش لحم", price: 1.200 },
+      { name: "فاير بريوش دبل لحم", price: 1.400 },
+      { name: "فاير بريوش دجاج", price: 1.200 },
+      { name: "صاروخ مشكاك لحم", price: 1.000 },
+      { name: "صاروخ مشكاك دجاج", price: 1.000 },
+      { name: "مشكاك لحم استرالي", price: 0.200 },
+      { name: "مشكاك لحم بوش", price: 0.200 },
+      { name: "مشكاك دجاج", price: 0.200 },
+      { name: "مشكاك بقر", price: 0.100 },
+      { name: "مشكاك جمل", price: 0.200 },
+      { name: "مشكاك حبار", price: 0.200 },
+      { name: "فرايز عادي", price: 0.500 },
+      { name: "فرايز سبايسي", price: 0.600 },
+      { name: "فرايز لحم - صغير", price: 1.000 },
+      { name: "فرايز دجاج - صغير", price: 1.000 },
+      { name: "فرايز لحم - كبير", price: 1.200 },
+      { name: "فرايز دجاج - كبير", price: 1.200 },
+      { name: "شوربة بحرية", price: 0.500 },
+      { name: "كولا", price: 0.300 },
+      { name: "كينزا", price: 0.200 },
+      { name: "بيبسي", price: 0.300 },
+      { name: "ديو", price: 0.300 },
+      { name: "موهيتو", price: 0.600 },
+      { name: "ماء", price: 0.100 },
+      { name: "كرك", price: 0.100 },
+      { name: "شاي أحمر", price: 0.100 },
+      { name: "فشار فحمة ونار", price: 0.500 }
+    ];
+
     let allReportsData = [];
+    let currentEditingReportKey = null;
+    let currentEditingItems = [];
 
     // تعيين تاريخ اليوم كقيمة افتراضية
     const today = new Date();
@@ -153,6 +241,16 @@
     
     document.getElementById('selected-date').value = todayStr;
 
+    // تعبئة قائمة الأصناف المتاحة للإضافة في نافذة التعديل
+    function populateMenuItemsSelect() {
+      const select = document.getElementById('menu-items-select');
+      select.innerHTML = '<option value="">-- اختر صنفاً لإضافته للطلب --</option>';
+      fullMenuItems.forEach((item, idx) => {
+        select.innerHTML += `<option value="${idx}">${item.name} (${item.price.toFixed(3)} ر.ع)</option>`;
+      });
+    }
+    populateMenuItemsSelect();
+
     // جلب البيانات من Firebase
     database.ref('sales_reports').on('value', (snapshot) => {
       const data = snapshot.val();
@@ -160,7 +258,7 @@
 
       if (data) {
         Object.keys(data).forEach(key => {
-          allReportsData.push(data[key]);
+          allReportsData.push({ firebaseKey: key, ...data[key] });
         });
       }
       filterByDate();
@@ -171,7 +269,6 @@
       const confirmReset = confirm('⚠️ تحذير: هل أنت متأكد من مسح جميع التقارير وتصفير العداد بالكامل؟ لا يمكن التراجع عن هذا الإجراء!');
       if (!confirmReset) return;
 
-      // تصفير العداد ومسح التقارير وطلبات المطبخ دفعة واحدة
       Promise.all([
         database.ref('counter').set(0),
         database.ref('sales_reports').remove(),
@@ -181,6 +278,129 @@
         window.location.reload();
       }).catch(error => {
         alert('حدث خطأ أثناء التصفير: ' + error.message);
+      });
+    }
+
+    // فتح نافذة تعديل الطلب
+    function openEditModal(firebaseKey) {
+      const report = allReportsData.find(r => r.firebaseKey === firebaseKey);
+      if (!report) return;
+
+      currentEditingReportKey = firebaseKey;
+      currentEditingItems = JSON.parse(JSON.stringify(report.items || []));
+
+      document.getElementById('edit-modal-title').innerText = `تعديل الطلب #${report.orderNum}`;
+      document.getElementById('menu-items-select').value = "";
+      renderEditItemsList();
+      document.getElementById('edit-modal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').style.display = 'none';
+      currentEditingReportKey = null;
+      currentEditingItems = [];
+    }
+
+    // إضافة صنف جديد اختيار من قائمة الكاشير للطلب الحالي
+    function addNewItemToCurrentOrder() {
+      const select = document.getElementById('menu-items-select');
+      const idx = select.value;
+      if (idx === "") {
+        alert('الرجاء اختيار صنف من القائمة أولاً!');
+        return;
+      }
+
+      const selectedMenuItem = fullMenuItems[idx];
+      
+      // التحقق إذا كان الصنف موجود مسبقاً في الطلب لزيادة كميته أو إضافته كصنف جديد
+      const existing = currentEditingItems.find(i => i.name === selectedMenuItem.name);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        currentEditingItems.push({
+          id: Date.now(),
+          name: selectedMenuItem.name,
+          price: selectedMenuItem.price,
+          qty: 1
+        });
+      }
+
+      select.value = "";
+      renderEditItemsList();
+    }
+
+    function renderEditItemsList() {
+      const container = document.getElementById('edit-items-container');
+      container.innerHTML = '';
+      let newTotal = 0;
+
+      if (currentEditingItems.length === 0) {
+        container.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 15px;">لا توجد أصناف في هذا الطلب...</div>`;
+        document.getElementById('edit-modal-total').innerText = '0.000 ر.ع';
+        return;
+      }
+
+      currentEditingItems.forEach((item, index) => {
+        const itemTotal = (item.price || 0) * item.qty;
+        newTotal += itemTotal;
+
+        container.innerHTML += `
+          <div class="edit-item-row">
+            <div>
+              <div style="font-weight:bold; font-size:13px;">${item.name}</div>
+              <small style="color:var(--text-muted);">${(item.price || 0).toFixed(3)} ر.ع</small>
+            </div>
+            <div class="edit-controls">
+              <button class="btn-qty" onclick="changeEditItemQty(${index}, -1)">-</button>
+              <span>${item.qty}</span>
+              <button class="btn-qty" onclick="changeEditItemQty(${index}, 1)">+</button>
+              <button class="btn-delete-item" onclick="removeEditItem(${index})">حذف</button>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('edit-modal-total').innerText = newTotal.toFixed(3) + ' ر.ع';
+    }
+
+    function changeEditItemQty(index, delta) {
+      currentEditingItems[index].qty += delta;
+      if (currentEditingItems[index].qty <= 0) {
+        currentEditingItems.splice(index, 1);
+      }
+      renderEditItemsList();
+    }
+
+    function removeEditItem(index) {
+      currentEditingItems.splice(index, 1);
+      renderEditItemsList();
+    }
+
+    // حفظ التعديلات في قاعدة البيانات
+    function saveEditedOrder() {
+      if (!currentEditingReportKey) return;
+
+      const newTotal = currentEditingItems.reduce((sum, i) => sum + ((i.price || 0) * i.qty), 0);
+
+      if (currentEditingItems.length === 0) {
+        const confirmDelete = confirm('الطلب أصبح فارغاً! هل تريد حذف هذا الطلب بالكامل؟');
+        if (confirmDelete) {
+          database.ref('sales_reports/' + currentEditingReportKey).remove().then(() => {
+            alert('تم حذف الطلب بنجاح.');
+            closeEditModal();
+          });
+        }
+        return;
+      }
+
+      database.ref('sales_reports/' + currentEditingReportKey).update({
+        items: currentEditingItems,
+        total: newTotal
+      }).then(() => {
+        alert('تم تعديل الطلب وتحديث المجموع بنجاح! ✓');
+        closeEditModal();
+      }).catch(error => {
+        alert('حدث خطأ أثناء التعديل: ' + error.message);
       });
     }
 
@@ -282,7 +502,8 @@
             <td>${item.date}</td>
             <td>
               <div style="margin-bottom:4px; font-weight:bold; color:#a0a0ab;">${carInfo}</div>
-              <div style="font-size: 12px; line-height: 1.5;">${itemsDetails}</div>
+              <div style="font-size: 12px; line-height: 1.5; margin-bottom:6px;">${itemsDetails}</div>
+              <button class="btn-edit" onclick="openEditModal('${item.firebaseKey}')">✏️ تعديل الطلب</button>
             </td>
             <td>${(item.total || 0).toFixed(3)} ر.ع</td>
           </tr>
@@ -324,7 +545,8 @@
             <td>${item.date}</td>
             <td>
               <div style="margin-bottom:4px; font-weight:bold; color:#a0a0ab;">${carInfo}</div>
-              <div style="font-size: 12px; line-height: 1.5;">${itemsDetails}</div>
+              <div style="font-size: 12px; line-height: 1.5; margin-bottom:6px;">${itemsDetails}</div>
+              <button class="btn-edit" onclick="openEditModal('${item.firebaseKey}')">✏️ تعديل الطلب</button>
             </td>
             <td>${(item.total || 0).toFixed(3)} ر.ع</td>
           </tr>
